@@ -59,6 +59,10 @@ function getMetadataMap(metadataEl) {
   }, {});
 }
 
+function normalizeTag(tag) {
+  return tag.trim().toLowerCase();
+}
+
 function readTagsFromMetadata(doc) {
   const metadataEl = doc.querySelector('.metadata');
   if (!metadataEl) return [];
@@ -93,10 +97,6 @@ function getOrCreateMetadata(doc) {
   wrapper.append(nextMetadata);
 
   return nextMetadata;
-}
-
-function normalizeTag(tag) {
-  return tag.trim().toLowerCase();
 }
 
 function getTagText(pathEl, fallback = '') {
@@ -140,10 +140,11 @@ export async function suggestTags(path, token, limit = 10) {
   const suggested = [];
 
   for (const candidate of candidates) {
-    if (seen.has(candidate)) continue;
-    suggested.push(candidate);
-    seen.add(candidate);
-    if (suggested.length === limit) break;
+    if (!seen.has(candidate)) {
+      suggested.push(candidate);
+      seen.add(candidate);
+      if (suggested.length === limit) break;
+    }
   }
 
   return suggested;

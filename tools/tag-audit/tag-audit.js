@@ -1,5 +1,5 @@
 import DA_SDK from 'https://da.live/nx/utils/sdk.js';
-import { LitElement, html, nothing } from 'da-lit';
+import { LitElement, html, nothing } from '../../deps/lit/dist/index.js';
 import loadStyle from '../../scripts/utils/styles.js';
 import loadTags from './utils.js';
 
