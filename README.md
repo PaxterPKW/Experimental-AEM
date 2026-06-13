@@ -18,6 +18,34 @@ For projects that want a few more batteries. Built by the team who brought you d
 1. Open the `{repo}` folder in your favorite code editor and buil something.
 1. **Recommended:** Install common npm packages like linting and testing: `npm i`.
 
+## DA micro-frontend tools
+
+This project ships with two DA micro-frontends:
+
+1. **Tag Assistant plugin** (library plugin): `/tools/tag-gen/tag-gen.html`
+2. **Tag Audit app** (fullscreen app): `/tools/tag-audit/tag-audit.html`
+
+### Enable in DA config
+
+Open `https://da.live/config#/{ORG}/{SITE}/` and add:
+
+#### library sheet row
+
+| title | path | format | icon | experience | ref |
+| --- | --- | --- | --- | --- | --- |
+| Tag Assistant (local) | http://localhost:3000/tools/tag-gen/tag-gen.html | | | | local |
+
+#### apps sheet row
+
+| title | description | image | path | ref |
+| --- | --- | --- | --- | --- |
+| Tag Audit (local) | Audit page tags across your site | | /app/{ORG}/{SITE}/tools/tag-audit/tag-audit?ref=local | local |
+
+### Local test URLs
+
+1. Plugin: `https://da.live/edit?ref=local#/{ORG}/{SITE}/index`
+2. App: `https://da.live/app/{ORG}/{SITE}/tools/tag-audit/tag-audit?ref=local`
+
 ## Features
 
 ### Localization & globalization
