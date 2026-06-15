@@ -1,19 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tag Generator</title>
-  <script type="importmap">
-    {
-      "imports": {
-        "da-lit": "/deps/lit/dist/index.js"
-      }
-    }
-  </script>
-  <script src="https://da.live/nx/utils/sdk.js" type="module"></script>
-  <script src="./tag-gen.js" type="module"></script>
-</head>
-<body>
-</body>
+<html>
+  <head>
+    <title>Tag Gen</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="icon" href="data:,">
+    <script type="importmap">
+      { "imports": { "da-lit": "/deps/lit/dist/index.js" } }
+    </script>
+    <style>html { display: flex; } html, body { min-height: 100%; min-width: 100%; }</style>
+    <!-- Import DA App SDK -->
+    <script src="https://da.live/nx/utils/sdk.js" type="module"></script>
+    <!-- Project App Logic -->
+    <script src="/tools/tag-gen/tag-gen.js" type="module"></script>
+  </head>
+  <body>
+  </body>
 </html>

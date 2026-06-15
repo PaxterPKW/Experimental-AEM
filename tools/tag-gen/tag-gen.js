@@ -1,148 +1,103 @@
 import DA_SDK from 'https://da.live/nx/utils/sdk.js';
-import { LitElement, html, nothing } from '../../deps/lit/dist/index.js';
+import { LitElement, html, nothing } from 'da-lit';
+import { loadPageTags, loadGenTags, savePageTags } from './utils.js';
+
+// Super Lite components
+import 'https://da.live/nx/public/sl/components.js';
+
+// Application styles
 import loadStyle from '../../scripts/utils/styles.js';
-import {
-  loadPageTags,
-  savePageTags,
-  suggestTags,
-} from './utils.js';
 
 const styles = await loadStyle(import.meta.url);
-const EL_NAME = 'ak-tag-generator';
 
-class AKTagGenerator extends LitElement {
+class ADLTagGen extends LitElement {
   static properties = {
     path: { attribute: false },
     token: { attribute: false },
-    _status: { state: true },
-    _error: { state: true },
     _pageTags: { state: true },
-    _suggestedTags: { state: true },
+    _genTags: { state: true },
+    _status: { state: true },
   };
 
   connectedCallback() {
     super.connectedCallback();
     this.shadowRoot.adoptedStyleSheets = [styles];
-    this._pageTags = [];
-    this._suggestedTags = undefined;
-    this.loadTags();
+    this.getPageTags();
   }
 
-  async loadTags() {
-    if (!this.token) {
-      this._error = 'Missing DA token. Make sure you are signed in.';
-      return;
-    }
-
-    this._status = 'Loading current tags...';
-    this._error = undefined;
-    try {
-      this._pageTags = await loadPageTags(this.path, this.token);
-      this._status = undefined;
-    } catch (e) {
-      this._error = e.message;
-      this._status = undefined;
-    }
+  async getPageTags() {
+    this._pageTags = await loadPageTags(this.path, this.token);
+    this._status = undefined;
   }
 
-  async generateSuggestions() {
-    this._status = 'Generating suggested tags...';
-    this._error = undefined;
-    try {
-      this._suggestedTags = await suggestTags(this.path, this.token);
+  async generateTags() {
+    this._status = 'Generating tags...';
+    this._genTags = await loadGenTags(this.path, this.token);
+    this._status = undefined;
+  }
+
+  async updateTags() {
+    this._status = 'Updating page...';
+    const { message, type } = await savePageTags(this.path, this.token, this._genTags);
+    if (type === 'success') {
+      this._pageTags = [...this._genTags];
+      this._genTags = undefined;
       this._status = undefined;
-    } catch (e) {
-      this._error = e.message;
-      this._status = undefined;
+    } else {
+      this._status = message;
     }
   }
 
-  async saveSuggestions() {
-    if (!this._suggestedTags?.length) return;
-
-    this._status = 'Saving tags...';
-    this._error = undefined;
-    try {
-      const tags = [...new Set([...this._pageTags, ...this._suggestedTags])];
-      const result = await savePageTags(this.path, this.token, tags);
-      if (result.type !== 'success') {
-        this._error = result.message;
-      } else {
-        this._pageTags = tags;
-        this._suggestedTags = undefined;
-      }
-    } catch (e) {
-      this._error = e.message;
-    } finally {
-      this._status = undefined;
-    }
+  get title() {
+    return this._genTags ? 'Generated tags' : 'Current tags';
   }
 
-  renderTags(tags, generated = false) {
-    if (!tags?.length) return html`<p class="empty">No tags found.</p>`;
+  get tags() {
+    return this._genTags || this._pageTags;
+  }
+
+  renderTags() {
+    if (!this.tags) return nothing;
 
     return html`
-      <ul class="tag-list">
-        ${tags.map((tag) => html`<li class="tag ${generated ? 'generated' : ''}">${tag}</li>`)}
-      </ul>
+      <p class="title ${this._genTags ? 'generated' : ''}">${this.title}</p>
+      <ul>${this.tags.map((tag) => html`<li>${tag}</li>`)}</ul>
+      <div class="action-area">
+      ${this.title === 'Current tags'
+    ? html`<button class="btn-gradient" @click=${this.generateTags}>
+                <svg><use href="https://main--summit-labs--aemsites.aem.live/tools/tag-gen/tag-gen.svg#tag-gen" /></svg> Generate tags</button>`
+    : html`<sl-button @click=${this.updateTags}>Save tags</sl-button>`}
+      </div>
     `;
   }
 
-  renderCurrentTags() {
+  renderStatus() {
     return html`
-      <section>
-        <p class="list-title">Current tags</p>
-        ${this.renderTags(this._pageTags)}
-      </section>
-    `;
-  }
-
-  renderGeneratedTags() {
-    if (!this._suggestedTags) return nothing;
-    return html`
-      <section>
-        <p class="list-title">Suggested tags</p>
-        ${this.renderTags(this._suggestedTags, true)}
-      </section>
+      <div class="status-container">
+        <svg><use href="https://main--summit-labs--aemsites.aem.live/tools/tag-gen/tag-gen.svg#tag-gen" /></svg>
+        <p class="status">${this._status}</p>
+      </div>
     `;
   }
 
   render() {
+    if (!(this._genTags || this._pageTags || this._status)) return nothing;
+
     return html`
-      <main class="panel">
-        <h1 class="title">Tag Assistant</h1>
-        <p class="subtitle">Generate and save metadata tags for this page.</p>
-        ${this._status ? html`<p class="status">${this._status}</p>` : nothing}
-        ${this._error ? html`<p class="status">${this._error}</p>` : nothing}
-        ${this.renderCurrentTags()}
-        ${this.renderGeneratedTags()}
-        <div class="actions">
-          <button type="button" @click=${() => this.loadTags()} ?disabled=${!!this._status}>Refresh</button>
-          <button type="button" class="primary" @click=${() => this.generateSuggestions()} ?disabled=${!!this._status}>
-            Suggest tags
-          </button>
-          <button
-            type="button"
-            class="primary"
-            @click=${() => this.saveSuggestions()}
-            ?disabled=${!!this._status || !this._suggestedTags?.length}
-          >
-            Save tags
-          </button>
-        </div>
-      </main>
+      ${this._status !== undefined ? this.renderStatus() : this.renderTags()}
     `;
   }
 }
 
-customElements.define(EL_NAME, AKTagGenerator);
+customElements.define('adl-tag-gen', ADLTagGen);
 
 (async function init() {
   const { context, token } = await DA_SDK;
   const { org, repo, path } = context;
 
-  const cmp = document.createElement(EL_NAME);
+  const cmp = document.createElement('adl-tag-gen');
   cmp.path = `/${org}/${repo}${path}`;
   cmp.token = token;
+
   document.body.append(cmp);
 }());

@@ -1,168 +1,117 @@
-const STOP_WORDS = new Set([
-  'about', 'after', 'again', 'also', 'an', 'and', 'are', 'because', 'been', 'before',
-  'being', 'between', 'both', 'but', 'can', 'content', 'could', 'did', 'does', 'during',
-  'each', 'for', 'from', 'have', 'here', 'how', 'into', 'its', 'just', 'like',
-  'more', 'most', 'new', 'not', 'our', 'out', 'over', 'page', 'should', 'site',
-  'some', 'than', 'that', 'the', 'their', 'them', 'there', 'these', 'this', 'those',
-  'through', 'under', 'use', 'using', 'was', 'were', 'what', 'when', 'where', 'which',
-  'while', 'will', 'with', 'you', 'your',
-]);
-
-function getSourcePath(path) {
-  return path.endsWith('.html') ? path : `${path}.html`;
-}
-
-function getOpts(token, method = 'GET') {
-  return {
-    method,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  };
-}
-
-async function fetchDoc(path, token) {
-  const sourcePath = getSourcePath(path);
-  const resp = await fetch(`https://admin.da.live/source${sourcePath}`, getOpts(token));
-  if (!resp.ok) {
-    throw new Error(`Could not fetch document (${resp.status}).`);
+function createMetadataBlock() {
+    const metadata = document.createElement('div');
+    metadata.className = 'metadata';
+    return metadata;
   }
-
-  const html = await resp.text();
-  return new DOMParser().parseFromString(html, 'text/html');
-}
-
-async function saveDoc(path, token, doc) {
-  const sourcePath = getSourcePath(path);
-  const body = new FormData();
-  const html = doc.body.outerHTML;
-  body.append('data', new Blob([html], { type: 'text/html' }));
-
-  const opts = getOpts(token, 'POST');
-  opts.body = body;
-
-  const resp = await fetch(`https://admin.da.live/source${sourcePath}`, opts);
-  if (!resp.ok) {
-    return { type: 'error', message: `Could not save (${resp.status}).` };
+  
+  function createTagRow(tags) {
+    const tagRow = document.createElement('div');
+  
+    const tagKey = document.createElement('div');
+    tagKey.textContent = 'tags';
+  
+    const tagVal = document.createElement('div');
+    tagVal.textContent = tags.join(', ');
+  
+    tagRow.append(tagKey, tagVal);
+  
+    return tagRow;
   }
-
-  return { type: 'success', message: 'Tags saved successfully.' };
-}
-
-function getMetadataMap(metadataEl) {
-  return [...metadataEl.children].reduce((acc, row) => {
-    if (row.children.length < 2) return acc;
-    const key = row.children[0].textContent.trim().toLowerCase();
-    const value = row.children[1].textContent.trim();
-    if (key) acc[key] = value;
-    return acc;
-  }, {});
-}
-
-function normalizeTag(tag) {
-  return tag.trim().toLowerCase();
-}
-
-function readTagsFromMetadata(doc) {
-  const metadataEl = doc.querySelector('.metadata');
-  if (!metadataEl) return [];
-
-  const meta = getMetadataMap(metadataEl);
-  if (!meta.tags) return [];
-
-  return meta.tags
-    .split(',')
-    .map((tag) => normalizeTag(tag))
-    .filter(Boolean);
-}
-
-function createTagRow(tags) {
-  const row = document.createElement('div');
-  const key = document.createElement('div');
-  const value = document.createElement('div');
-  key.textContent = 'tags';
-  value.textContent = tags.join(', ');
-  row.append(key, value);
-  return row;
-}
-
-function getOrCreateMetadata(doc) {
-  const metadataEl = doc.querySelector('.metadata');
-  if (metadataEl) return metadataEl;
-
-  const nextMetadata = document.createElement('div');
-  nextMetadata.className = 'metadata';
-
-  const wrapper = doc.querySelector('main > div:last-child') || doc.body;
-  wrapper.append(nextMetadata);
-
-  return nextMetadata;
-}
-
-function getTagText(pathEl, fallback = '') {
-  if (!pathEl) return fallback;
-  const text = pathEl.textContent || '';
-  return text.toLowerCase().trim();
-}
-
-function findKeywordCandidates(doc) {
-  const els = doc.querySelectorAll('h1, h2, h3, p');
-  const text = [...els].map((el) => getTagText(el)).join(' ');
-  const tokens = text
-    .replace(/[^a-z0-9\s-]/g, ' ')
-    .split(/\s+/)
-    .map((word) => word.trim())
-    .filter((word) => word.length >= 3 && !STOP_WORDS.has(word));
-
-  const score = tokens.reduce((acc, token) => {
-    acc[token] = (acc[token] || 0) + 1;
-    return acc;
-  }, {});
-
-  return Object.entries(score)
-    .sort((a, b) => {
-      if (b[1] === a[1]) return a[0].localeCompare(b[0]);
-      return b[1] - a[1];
-    })
-    .map(([word]) => word);
-}
-
-export async function loadPageTags(path, token) {
-  const doc = await fetchDoc(path, token);
-  return readTagsFromMetadata(doc);
-}
-
-export async function suggestTags(path, token, limit = 10) {
-  const doc = await fetchDoc(path, token);
-  const currentTags = readTagsFromMetadata(doc);
-  const candidates = findKeywordCandidates(doc);
-  const seen = new Set(currentTags);
-  const suggested = [];
-
-  for (const candidate of candidates) {
-    if (!seen.has(candidate)) {
-      suggested.push(candidate);
-      seen.add(candidate);
-      if (suggested.length === limit) break;
+  
+  function getOpts(token, method = 'GET') {
+    return {
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    };
+  }
+  
+  async function fetchDoc(path, token) {
+    const opts = getOpts(token);
+    const resp = await fetch(`https://admin.da.live/source${path}.html`, opts);
+    if (!resp.ok) return { message: 'Could not fetch doc.', status: resp.status };
+    const html = await resp.text();
+    return { html };
+  }
+  
+  async function saveDoc(path, token, doc) {
+    // Create the body
+    const body = new FormData();
+    const html = doc.body.outerHTML;
+    const data = new Blob([html], { type: 'text/html' });
+    body.append('data', data);
+  
+    // Setup options
+    const opts = getOpts(token, 'POST');
+    opts.body = body;
+  
+    const resp = await fetch(`https://admin.da.live/source${path}.html`, opts);
+    if (!resp.ok) return { message: 'Could not save.', status: resp.status, type: 'error' };
+    return { message: 'Successfully saved.', status: resp.status, type: 'success' };
+  }
+  
+  const getMetadata = (el) => [...el.childNodes].reduce((rdx, row) => {
+    if (row.children) {
+      const key = row.children[0].textContent.trim().toLowerCase();
+      const content = row.children[1];
+      const text = content.textContent.trim().toLowerCase();
+      if (key && text) rdx[key] = { text };
     }
+    return rdx;
+  }, {});
+  
+  export async function loadGenTags(path, token) {
+    const { html } = await fetchDoc(path, token);
+    const baseOpts = getOpts(token, 'POST');
+    const opts = { ...baseOpts, body: JSON.stringify({ html }) };
+    const resp = await fetch(`https://da-etc.adobeaem.workers.dev/tags`, opts);
+    if (!resp.ok) return [];
+    const { tags } = await resp.json();
+    return tags;
   }
-
-  return suggested;
-}
-
-export async function savePageTags(path, token, tags) {
-  const cleanedTags = tags.map((tag) => normalizeTag(tag)).filter(Boolean);
-  const doc = await fetchDoc(path, token);
-  const metadataEl = getOrCreateMetadata(doc);
-  const rows = [...metadataEl.querySelectorAll(':scope > div')];
-  const tagsRow = rows.find((row) => getTagText(row.children[0]) === 'tags');
-  const nextTagRow = createTagRow(cleanedTags);
-
-  if (tagsRow) {
-    metadataEl.replaceChild(nextTagRow, tagsRow);
-  } else {
-    metadataEl.append(nextTagRow);
+  
+  export async function loadPageTags(path, token) {
+    const { html } = await fetchDoc(path, token);
+    if (!html) return [];
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const metaEl = doc.querySelector('.metadata');
+    if (metaEl) {
+      const { tags } = getMetadata(metaEl);
+      if (tags) {
+        return tags.text.split(',').map((tag) => tag.trim().toLowerCase());
+      }
+    }
+    return [];
   }
-
-  return saveDoc(path, token, doc);
-}
+  
+  export async function savePageTags(path, token, tags) {
+    // Build the tag row elements
+    const tagsRow = createTagRow(tags);
+  
+    // Always get a fresh doc
+    const { html } = await fetchDoc(path, token);
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+  
+    // Re-use existing metadata block if possible
+    const metaEl = doc.querySelector('.metadata');
+    if (metaEl) {
+      const metaRows = metaEl.querySelectorAll(':scope > div');
+      const foundRow = [...metaRows].find((row) => {
+        const text = row.children[0].textContent;
+        return text === 'tags';
+      });
+      if (foundRow) {
+        foundRow.parentElement.replaceChild(tagsRow, foundRow);
+      } else {
+        metaEl.append(tagsRow);
+      }
+    } else {
+      // Make net-new metadata block
+      const newMetaEl = createMetadataBlock();
+      newMetaEl.append(tagsRow);
+      doc.body.querySelector('main > div:last-child').append(newMetaEl);
+    }
+    return saveDoc(path, token, doc);
+  }
+  
