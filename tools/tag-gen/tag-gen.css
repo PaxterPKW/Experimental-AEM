@@ -1,0 +1,94 @@
+:host {
+  display: block;
+  font-family: var(--font-family, "Trebuchet MS", sans-serif);
+  color: #1b1b1b;
+}
+
+.panel {
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.subtitle {
+  margin: 0;
+  color: #494949;
+  font-size: 14px;
+}
+
+.status {
+  margin: 0;
+  padding: 12px;
+  border-radius: 8px;
+  background: #f1f1f1;
+  font-size: 14px;
+}
+
+.list-title {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.tag-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag {
+  font-size: 13px;
+  border-radius: 999px;
+  padding: 4px 10px;
+  background: #efefef;
+}
+
+.tag.generated {
+  background: #eaf2ff;
+  color: #002c74;
+}
+
+.empty {
+  margin: 0;
+  color: #636363;
+  font-size: 14px;
+}
+
+.actions {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+button {
+  border: 1px solid #b5b5b5;
+  background: #fff;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+button.primary {
+  background: #0058e4;
+  border-color: #0058e4;
+  color: #fff;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
